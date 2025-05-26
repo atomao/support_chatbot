@@ -1,0 +1,108 @@
+{"faqs": [
+    {
+    "id": 1,
+    "question": "What are your store hours?",
+    "answer": "We’re open Monday–Saturday from 9:00 AM to 8:00 PM and Sunday from 10:00 AM to 6:00 PM."
+    },
+    {
+    "id": 2,
+    "question": "Where are you located?",
+    "answer": "Our bookstore is at 123 Main Street, Anytown. Free parking is available behind the store."
+    },
+    {
+    "id": 3,
+    "question": "Do you offer online ordering?",
+    "answer": "Yes, you can browse and order books on our website at www.examplebookstore.com."
+    },
+    {
+    "id": 4,
+    "question": "What is your return and exchange policy?",
+    "answer": "You may return or exchange new, unused books within 30 days of purchase with a receipt."
+    },
+    {
+    "id": 5,
+    "question": "How can I track my order?",
+    "answer": "After your order ships, we’ll email you a tracking number and link."
+    },
+    {
+    "id": 6,
+    "question": "Do you offer gift wrapping?",
+    "answer": "Yes, we offer complimentary gift wrapping at checkout or in-store."
+    },
+    {
+    "id": 7,
+    "question": "Can I purchase a gift card?",
+    "answer": "Absolutely—physical and e-gift cards are available in any denomination."
+    },
+    {
+    "id": 8,
+    "question": "What payment methods do you accept?",
+    "answer": "We accept Visa, MasterCard, American Express, PayPal, and Apple Pay."
+    },
+    {
+    "id": 9,
+    "question": "Do you ship internationally?",
+    "answer": "Yes, we ship worldwide. International shipping rates vary by destination."
+    },
+    {
+    "id": 10,
+    "question": "How long does shipping take?",
+    "answer": "Domestic orders usually arrive in 3–7 business days; international orders vary by location."
+    },
+    {
+    "id": 11,
+    "question": "What are your shipping fees?",
+    "answer": "Standard shipping is $5 for orders under $50 and free for orders over $50."
+    },
+    {
+    "id": 12,
+    "question": "Can I cancel or modify my order?",
+    "answer": "You may cancel or change your order within 24 hours of placing it by contacting customer service."
+    },
+    {
+    "id": 13,
+    "question": "Do you offer special orders or pre-orders?",
+    "answer": "Yes, we can special-order out-of-stock titles and accept pre-orders for upcoming releases."
+    },
+    {
+    "id": 14,
+    "question": "Is there a loyalty or rewards program?",
+    "answer": "Yes, join our Book Lovers Club to earn 1 point per dollar spent and redeem rewards."
+    },
+    {
+    "id": 15,
+    "question": "How do I apply a promotional code?",
+    "answer": "Enter your promo code at checkout before completing payment to see the discount."
+    },
+    {
+    "id": 16,
+    "question": "Do you host book signings or events?",
+    "answer": "Yes, please check our events calendar on the website for upcoming signings and readings."
+    },
+    {
+    "id": 17,
+    "question": "Can I reserve a book in advance?",
+    "answer": "You can place a hold online or by phone; we’ll keep it for you for 48 hours."
+    },
+    {
+    "id": 18,
+    "question": "What if a book is out of stock?",
+    "answer": "You can request a backorder notification or consider a similar title we have in stock."
+    },
+    {
+    "id": 19,
+    "question": "Do you offer e-books or audiobooks?",
+    "answer": "Yes, e-books and audiobooks are available through our partner app—ask us for details."
+    },
+    {
+        "id": 20,
+        "question": "From which place do ship books?",
+        "answer": "Our shop books storage is located in Ukraine, Lviv on Kulparkivska 170 street"
+    },
+    {
+        "id": 21,
+        "question": "If I live in Lviv can I directly take it?",
+        "answer": "Yes, you can call our manager (+38099999999) to arrange a delivery take out."
+    }
+]
+}

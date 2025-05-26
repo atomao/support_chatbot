@@ -1,0 +1,3 @@
+from shop_agents.consultant import consultant_agent
+from shop_agents.support import support_agent
+from shop_agents.manager import manager_agent

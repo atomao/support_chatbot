@@ -1,0 +1,409 @@
+{% import '_macros.html' as macros %}
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <title>{% block title %}{% trans %}flask store{% endtrans %}{% endblock %}</title>
+    {% block meta %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="generator" content="Saleor">
+        <meta name="theme-color" content="#333333">
+        <meta name="msapplication-TileColor" content="#2b5797">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="og:type" content="website">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+    {% endblock meta %}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='build/storefront.css') }}">
+    {% block stylesheet %}{% endblock stylesheet %}
+</head>
+<!-- Support-chat container -->
+<div id="support-chat" hidden>
+    <header>Need help? <span id="sc-close">✕</span></header>
+    <div id="sc-log"></div>
+  
+    <form id="sc-form" autocomplete="off">
+      <input id="sc-input" placeholder="Type a message…" />
+    </form>
+  </div>
+  
+  <!-- Floating button -->
+  <button id="sc-btn">💬</button>
+  
+  <!-- Minimal styling -->
+  <style>
+    /* SINGLE consolidated rule */
+    #support-chat{
+      /* placement */
+      position:fixed; right:1rem; bottom:4rem;
+      /* size – start small but let the user change it */
+      width:280px;               /* ← keep as starting size … */
+      max-width:90vw;            /* … but allow it to grow */
+      max-height:60vh;
+      min-width:220px; min-height:160px;
+    
+      /* look & feel */
+      display:flex; flex-direction:column;
+      border:1px solid #ddd; border-radius:8px; background:#fff;
+      font:14px/1.4 system-ui; box-shadow:0 4px 12px rgba(0,0,0,.15);
+    
+      /* interaction */
+      resize:both;               /* user can grab ↘︎ */
+      overflow:auto;             /* required for `resize` */
+    }
+    
+    /* header is still your drag handle */
+    #support-chat header{
+      padding:.5rem .75rem; background:#333; color:#fff;
+      display:flex; justify-content:space-between; align-items:center;
+      cursor:move; user-select:none;
+      background:#83E4D2;   /* aqua ─ replace the old #333 */
+    }
+    #support-chat #sc-log{
+      flex:1; overflow-y:auto; padding:.5rem .75rem;
+      white-space: pre-wrap;   /* keep \n and wrap long lines */
+
+    }
+    #support-chat #sc-log .msg{margin:.4rem 0;}
+    #support-chat #sc-log .me{font-weight:500;}
+    #support-chat form{display:flex; border-top:1px solid #eee;}
+    #support-chat input{flex:1; border:0; padding:.5rem .6rem;}
+    #support-chat input:focus{outline:none;}
+    #sc-btn{
+      position:fixed; right:1rem; bottom:1rem; width:52px; height:52px;
+      border:none; border-radius:50%; background:#2563eb; color:#fff;
+      font-size:24px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.25);
+    }
+    /* 👉 after the rest of the widget CSS */
+    #support-chat,
+    #sc-btn {
+      z-index: 9999;      /* any number > the rest of your theme */
+    }
+    
+  </style>
+  <script>
+    (() => {
+      // ── persistent id ─────────────────────────────────────────
+      const ID_KEY = 'support_session_id';
+      let sid = localStorage.getItem(ID_KEY);
+      if (!sid) {
+        sid = crypto.randomUUID();          // browser-native
+        localStorage.setItem(ID_KEY, sid);
+      }
+    
+      // ── DOM refs ──────────────────────────────────────────────
+      const elChat  = document.getElementById('support-chat');
+      const elBtn   = document.getElementById('sc-btn');
+      const elClose = document.getElementById('sc-close');
+      const elForm  = document.getElementById('sc-form');
+      const elInput = document.getElementById('sc-input');
+      const elLog   = document.getElementById('sc-log');
+      // ── drag-to-move ─────────────────────────────────────────────
+        const dragHdr = elChat.querySelector('header');
+        let dragging = false, dx = 0, dy = 0;
+
+        dragHdr.addEventListener('mousedown', e => {
+        dragging = true;
+        // switch from fixed(bottom/right) → absolute(left/top) once we start dragging
+        elChat.style.right = elChat.style.bottom = 'auto';
+        dx = e.clientX - elChat.getBoundingClientRect().left;
+        dy = e.clientY - elChat.getBoundingClientRect().top;
+        document.body.style.userSelect = 'none';
+        });
+        document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        elChat.style.left = `${e.clientX - dx}px`;
+        elChat.style.top  = `${e.clientY - dy}px`;
+        });
+        document.addEventListener('mouseup', () => {
+        dragging = false;
+        document.body.style.userSelect = '';
+        saveGeom();                  // store when the user stops dragging
+        });
+
+        // ── persist geometry (size & position) ───────────────────────
+        const GEO_KEY = 'sc-geom';
+        function saveGeom(){
+        sessionStorage.setItem(GEO_KEY, JSON.stringify({
+            w: elChat.offsetWidth,
+            h: elChat.offsetHeight,
+            l: elChat.style.left,
+            t: elChat.style.top
+        }));
+        }
+        // save on any resize too
+        new ResizeObserver(saveGeom).observe(elChat);
+
+        // restore at startup
+        const g = JSON.parse(sessionStorage.getItem(GEO_KEY)||'null');
+        if (g){
+        elChat.style.width  = g.w+'px';
+        elChat.style.height = g.h+'px';
+        elChat.style.left   = g.l;
+        elChat.style.top    = g.t;
+        elChat.style.right  = elChat.style.bottom = 'auto';
+        }
+
+      // ── helpers ───────────────────────────────────────────────
+      function append(text, cls) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (cls || '');
+        div.textContent = text;
+        elLog.appendChild(div);
+        elLog.scrollTop = elLog.scrollHeight;
+      }
+    
+      // ── restore state (open flag + history) ───────────────────
+      if (sessionStorage.getItem('sc-open') === 'true') {
+        elChat.hidden = false; elBtn.hidden = true;
+      }
+      JSON.parse(sessionStorage.getItem('sc-log') || '[]')
+            .forEach(({t,c}) => append(t, c));
+    
+      // ── persist helpers ───────────────────────────────────────
+      function saveLog(text, cls) {
+        const arr = JSON.parse(sessionStorage.getItem('sc-log') || '[]');
+        arr.push({t: text, c: cls});
+        sessionStorage.setItem('sc-log', JSON.stringify(arr));
+      }
+      function setOpen(flag) { sessionStorage.setItem('sc-open', flag); }
+    
+      // ── UI handlers ───────────────────────────────────────────
+      elBtn.onclick  = () => { elChat.hidden = false; elBtn.hidden = true; setOpen(true);  };
+      elClose.onclick= () => { elChat.hidden = true;  elBtn.hidden = false; setOpen(false); };
+    
+      elForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const msg = elInput.value.trim();
+        if (!msg) return;
+        append(msg,'me');  saveLog(msg,'me');
+        elInput.value = '';
+    
+        try {
+          const r = await fetch('http://127.0.0.1:8000/api/support/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sid, message: msg, user_id: "14"})   /* ← send id */
+          });
+          const { answer } = await r.json();
+          append("CHATBOT: " + answer); saveLog(answer);
+        } catch {
+          const err = 'Sorry, connection problem 😔';
+          append(err);    saveLog(err);
+        }
+      };
+    })();
+    </script>
+    
+<body>
+{% block header %}
+    <header class="navbar" role="navigation">
+        <div class="navbar__login container-fluid">
+            <div class=" d-none d-md-block container">
+                <div class="row">
+                    <div class="col-6">
+                        <p class="text-left">{{ settings['project_title'].value }}
+                            - {{ settings['project_subtitle'].value }}</p>
+                    </div>
+                    <div class="col-6">
+                        <ul class="float-right">
+                            {% if current_user.is_authenticated %}
+                                {% if current_user.can_edit() %}
+
+                                    <li>
+                                        <a href="{{ url_for('dashboard.index') }}" target="_blank" rel="noopener">
+                                            {% trans %}Dashboard{% endtrans %}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {{ run_hook("flaskbb_tpl_user_nav_loggedin_before") }}
+                                <li>
+                                    <a href="{{ url_for('account.index') }}">
+                                        {% trans %}Your Account{% endtrans %}</a>
+                                </li>
+
+                                <li>
+                                    <a href="{{ url_for('account.logout') }}">
+                                        {% trans %}Log Out{% endtrans %}</a>
+                                </li>
+
+                            {% else %}
+                                <li>
+                                    <a rel="nofollow" href="{{ url_for('account.signup') }}">
+                                        {% trans %}Register{% endtrans %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a rel="nofollow" href="{{ url_for('account.login') }}">
+                                        {% trans %}Log in{% endtrans %}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="navbar__brand container-fluid d-block">
+            <div class="container">
+                <div class="row no-gutters">
+                    <div class="col-8 col-md-4 navbar__logo">
+                        <div class="menu-icon-mobile d-md-none navbar__brand__menu-toggle closed open">
+                            <svg data-src="{{ url_for('static', filename='img/mobile-menu.svg') }}" width="28px"
+                                 height="20px"></svg>
+                        </div>
+                        <a href="{{ url_for('public.home') }}">
+                            <svg data-src="{{ url_for('static', filename='img/logo-document.svg') }}" width="176px"
+                                 height="38px"></svg>
+                        </a>
+                    </div>
+                    <div class="col-2 col-md-5 navbar__search static">
+                        <div class="d-md-none mobile-search-icon">
+                            <svg data-src="{{ url_for('static', filename='img/search.svg') }}" width="30"
+                                 height="30"></svg>
+                        </div>
+                        <form class="form-inline search-form" action="/search">
+                            <div class="mobile-close-search d-md-none">
+                                <svg data-src="{{ url_for('static', filename='img/close.svg') }}" width="30"
+                                     height="30"></svg>
+                            </div>
+                            <input class="form-control" type="text" name="q" value="{{ request.args.get('q', '') }}"
+                                   placeholder="Search for product" required>
+                            <button class="btn btn-primary" type="submit">
+                                Search
+                                <svg data-src="{{ url_for('static', filename='img/search.svg') }}" width="18"
+                                     height="18"></svg>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-2 col-md-3 position-relative">
+                        <div class="navbar__brand__cart float-right">
+                            <a rel="nofollow" class="cart__icon" href="{{ url_for('checkout.cart_index') }}">
+                <span class="cart-label d-none d-md-inline-block">
+                  {% trans %}Your Cart{% endtrans %}
+                </span>
+                                <div class="navbar__brand__cart__icon">
+                                    <svg data-src="{{ url_for('static', filename='img/cart.svg') }}" width="24"
+                                         height="24"></svg>
+                                </div>
+                                {% if current_user.is_authenticated and current_user_cart.quantity %}
+                                    <span class="badge ">
+                  {{ current_user_cart.quantity }}
+                </span>
+                                {% else %}
+                                    <span class="badge empty">
+                  0
+                </span>
+                                {% endif %}
+                            </a>
+                            <div class="cart-dropdown d-none">
+                                {% include "public/cart_dropdown.html" %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% block navigation %}
+            <div class="navbar__menu container d-block">
+                <nav class="navigation">
+                    {{ macros.menu(top_menu) }}
+                </nav>
+            </div>
+        {% endblock %}
+    </header>
+{% endblock %}
+<div class="container maincontent">
+    {% block topcontent %}{% endblock topcontent %}
+
+    {% for message in get_flashed_messages(with_categories=True) %}
+        <br>
+        <div class="alert alert-{{ message[0] }} alert-dismissible fade show" role="alert">
+            {{ message[1] }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+
+    {% block breadcrumb %}
+    {% endblock breadcrumb %}
+    {% block content %}
+    {% endblock content %}
+</div>
+{% block footer %}
+    <footer class="footer">
+        <div class="footer__menus">
+            <div class="container">
+                <div class="row">
+                    {{ macros.footer_menu(bottom_menu) }}
+                    <div class="col-md-2 col-6">
+                        <ul class="menu">
+                            <li class="nav-item__dropdown menu__item">
+                                <a>
+                                    <strong>
+                                        {% trans %}Account{% endtrans %}
+                                    </strong>
+                                </a>
+                                <hr/>
+                            <li>
+                                <a rel="nofollow" href="{{ url_for('checkout.cart_index') }}">
+                                    {% trans %}Your Cart{% endtrans %}
+                                </a>
+                            </li>
+                            {% if current_user.is_authenticated %}
+                                {% if current_user.can_edit() %}
+                                    <li>
+                                        <a href="{{ url_for('dashboard.index') }}" target="_blank" rel="noopener">
+                                            {% trans %}Dashboard{% endtrans %}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <a href="{{ url_for('account.index') }}">
+                                        {% trans %}Your account{% endtrans %}
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a href="{{ url_for('account.logout') }}">
+                                        {% trans %}Log out{% endtrans %}</a>
+                                </li>
+
+                            {% else %}
+                                <li>
+                                    <a rel="nofollow" href="{{ url_for('account.signup') }}">
+                                        {% trans %}Register{% endtrans %}
+                                    </a>
+                                </li>
+                                <li>
+                                    <a rel="nofollow" href="{{ url_for('account.login') }}">
+                                        {% trans %}Log in{% endtrans %}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="offset-md-2 col-md-4 col-12">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer__copy">
+            <div class="container">
+                <div class="row">
+                    <div class="col-4">
+                        <a href="{{ url_for('public.home') }}" class="footer__logo float-md-left">
+                            <svg data-src="{{ url_for('static', filename='img/logo-document.svg') }}"></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+{% endblock %}
+{% block footer_scripts %}
+    <script src="{{ url_for('static', filename='build/storefront.js') }}"></script>
+{% endblock footer_scripts %}
+</body>
+
+</html>
